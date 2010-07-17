@@ -14,5 +14,5 @@ EM.run {
             puts "Deleted: #{path}"
         end
     end
-    puts "EventMachine running..."
+    puts "Monitoring #{File.expand_path(dir)}..."
 }
