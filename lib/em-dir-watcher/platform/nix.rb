@@ -32,7 +32,6 @@ class Watcher
             FSSM::Backends::FSEvents.send(:alias_method, :add_handler, :patched_add_handler)
             $stdout.sync = true
             report = proc { |b,r|
-              $stderr.puts "Sending " + File.join(b, r)
               puts File.join(b, r)
             }
             FSSM.monitor path, globs do
