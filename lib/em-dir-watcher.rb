@@ -2,7 +2,7 @@
 require 'eventmachine'
 require 'rbconfig'
 
-module EvDirectoryWatcher
+module EMDirWatcher
     PLATFORM =
         case Config::CONFIG['target_os']
             when /mswin|mingw/ then 'Windows'
@@ -10,9 +10,9 @@ module EvDirectoryWatcher
         end
 end
 
-require "em-directory-watch/platform/#{EvDirectoryWatcher::PLATFORM.upcase}"
+require "em-dir-watcher/platform/#{EMDirWatcher::PLATFORM.upcase}"
 
-module EvDirectoryWatcher
+module EMDirWatcher
     Watcher = Platform.const_get(PLATFORM)::Watcher
 
     def self.watch path, globs, &handler
