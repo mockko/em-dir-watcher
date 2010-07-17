@@ -10,7 +10,7 @@ module EMDirWatcher
         end
 end
 
-require "em-dir-watcher/platform/#{EMDirWatcher::PLATFORM.upcase}"
+require "em-dir-watcher/platform/#{EMDirWatcher::PLATFORM.downcase}"
 
 module EMDirWatcher
     Watcher = Platform.const_get(PLATFORM)::Watcher
