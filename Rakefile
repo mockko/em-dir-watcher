@@ -4,11 +4,11 @@ require 'rake'
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
-    gem.name = "em-directory-watcher"
+    gem.name = "em-dir-watcher"
     gem.summary = %Q{Directory watching support for EventMachine (fssm / win32-changenotify)}
     gem.description = gem.summary
     gem.email = "andreyvit@gmail.com"
-    gem.homepage = "http://github.com/mockko/em-directory-watcher"
+    gem.homepage = "http://github.com/mockko/em-dir-watcher"
     gem.authors = ["Andrey Tarantsov"]
 #     gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
@@ -47,7 +47,7 @@ Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
   rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "em-directory-watcher #{version}"
+  rdoc.title = "em-dir-watcher #{version}"
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
