@@ -3,7 +3,7 @@ require 'eventmachine'
 require 'rbconfig'
 
 module EMDirWatcher
-    PLATFORM =
+    PLATFORM = ENV['EM_DIR_WATCHER_PLATFORM'] ||
         case Config::CONFIG['target_os']
             when /mswin|mingw/ then 'Windows'
             else                    'NIX'
