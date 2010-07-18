@@ -3,24 +3,22 @@ module EMDirWatcher
 module Platform
 module NIX
 
-if FSSM::Support.backend == 'FSEvents'
-  # monkey-patch to set latency to 0
-  module FssmFSEventsMonkeyPatch
+# monkey-patch to set latency to 0
+module FssmFSEventsMonkeyPatch
     def patched_add_handler(handler, preload=true)
-      @handlers[handler.path.to_s] = handler
+        @handlers[handler.path.to_s] = handler
 
-      fsevent = Rucola::FSEvents.new(handler.path.to_s, {:latency => 0.0}) do |events|
-        events.each do |event|
-          handler.refresh(event.path)
+        fsevent = Rucola::FSEvents.new(handler.path.to_s, {:latency => 0.0}) do |events|
+            events.each do |event|
+                handler.refresh(event.path)
+            end
         end
-      end
 
-      fsevent.create_stream
-      handler.refresh(nil, true) if preload
-      fsevent.start
-      @fsevents << fsevent
+        fsevent.create_stream
+        handler.refresh(nil, true) if preload
+        fsevent.start
+        @fsevents << fsevent
     end
-  end
 end
 
 class Watcher
@@ -30,8 +28,10 @@ class Watcher
     class << self
         def run_fssm_watcher path, globs
             require 'fssm'
-            FSSM::Backends::FSEvents.send(:include, FssmFSEventsMonkeyPatch)
-            FSSM::Backends::FSEvents.send(:alias_method, :add_handler, :patched_add_handler)
+            if FSSM::Support.backend == 'FSEvents'
+                FSSM::Backends::FSEvents.send(:include, FssmFSEventsMonkeyPatch)
+                FSSM::Backends::FSEvents.send(:alias_method, :add_handler, :patched_add_handler)
+            end
             $stdout.sync = true
             report = proc { |b,r|
               puts File.join(b, r)
