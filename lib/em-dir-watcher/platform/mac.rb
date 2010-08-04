@@ -12,6 +12,7 @@ class Watcher
     def initialize path, inclusions, exclusions
         subprocess = lambda do |&output|
             require "em-dir-watcher/platform/mac/rubycocoa_watcher"
+            # require "em-dir-watcher/platform/mac/ffi_fsevents_watcher"
             stream = FSEventStream.new [path] do |changed_paths|
                 changed_paths.each { |path| output.call path }
             end
