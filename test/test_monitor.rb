@@ -40,7 +40,7 @@ class TestMonitor < Test::Unit::TestCase
                   EM.add_timer 1 do EM.stop end
                 end
             end
-            EM.add_timer 0.5, &timer_handler
+            EM.add_timer 1, &timer_handler
             EM.add_timer 20 do EM.stop end
         }
         watcher.stop
