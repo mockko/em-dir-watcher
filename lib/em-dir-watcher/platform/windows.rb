@@ -1,5 +1,6 @@
 
 require File.join(File.dirname(__FILE__), 'windows', 'path_to_ruby_exe')
+require 'socket'
 
 module EMDirWatcher
 module Platform
@@ -21,23 +22,27 @@ module TcpHandler
 end
 
 class Watcher
-
-    def initialize path, globs, &handler
+    
+    def initialize path, inclusions, exclusions, &handler
         @path = path
-        @globs = globs
         @handler = handler
         @active = true
+        @ready_to_use = false
 
         start_server
         setup_listener
     end
 
+    def ready_to_use!; @ready_to_use = true; end
+    
+    def ready_to_use?; @ready_to_use; end
+
     def start_server
         @server = EM.start_server '127.0.0.1', 0, TcpHandler do |server|
             server.watcher = self
+            ready_to_use!
         end
-        @server_port, _ = Socket.unpack_sockaddr_in(EM::get_sockname @server)
-        puts "Server running on port #{@server_port}"
+        @server_port, _ = Socket.unpack_sockaddr_in(EM::get_sockname(@server))
     end
 
     def stop_server
@@ -54,7 +59,7 @@ class Watcher
 
     def kill
         if @io
-            Process.kill 'TERM', @io.pid 
+            Process.kill 9, @io.pid
             Process.waitpid @io.pid
             @io = nil
         end
@@ -67,7 +72,7 @@ class Watcher
     end
 
     def path_changed path
-        @handler.call path
+        @handler.call path, true
     end
 
     def listener_died

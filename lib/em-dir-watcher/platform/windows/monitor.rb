@@ -1,5 +1,4 @@
 $stdout.sync = true
-
 require 'rubygems'
 require 'socket'
 require 'win32/changenotify'
@@ -14,7 +13,6 @@ socket = TCPSocket.open('127.0.0.1', port)
 begin
   cn.wait do |events|
     events.each do |event|
-      # puts event.file_name
       socket.puts event.file_name
     end
   end

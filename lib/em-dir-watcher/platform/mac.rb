@@ -28,6 +28,8 @@ class Watcher
         end
     end
 
+    def ready_to_use?; true; end
+
     def stop
         @invoker.stop
     end

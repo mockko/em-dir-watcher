@@ -28,6 +28,8 @@ class Watcher
       conn.notify_readable = true
     end
   end
+    
+  def ready_to_use?; true; end
 
   def stop
     @conn.stop

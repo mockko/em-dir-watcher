@@ -5,7 +5,7 @@ module EMDirWatcher
     def self.watch path, inclusions=nil, exclusions=[]
         tree = Tree.new path, inclusions, exclusions
         Watcher.new path, inclusions, exclusions do |change_scope, refresh_subtree|
-            for changed_path in tree.refresh! change_scope, true
+            for changed_path in tree.refresh! change_scope, refresh_subtree
                 yield changed_path
             end
         end
