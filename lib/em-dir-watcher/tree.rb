@@ -1,5 +1,6 @@
 
 require 'set'
+require 'pathname'
 
 module EMDirWatcher
 
@@ -138,8 +139,16 @@ class Tree
     end
   end
 
+  def self.resolve_real_path_where_possible expanded_path
+    Pathname.new(expanded_path).realpath().to_s
+  rescue Errno::ENOENT
+    dirname, basename = File.dirname(expanded_path), File.basename(expanded_path)
+    return expanded_path if dirname == '/' || dirname == '.'
+    return File.join(resolve_real_path_where_possible(dirname), basename)
+  end
+
   def initialize full_path, inclusions=nil, exclusions=[]
-    @full_path = File.expand_path(full_path)
+    @full_path = self.class.resolve_real_path_where_possible(File.expand_path(full_path))
     self.inclusions = inclusions
     self.exclusions = exclusions
     @root_entry = Entry.new self, '', false
@@ -147,7 +156,8 @@ class Tree
   end
 
   def refresh! scope=nil
-    scope = File.expand_path(scope || @full_path)
+    scope = self.class.resolve_real_path_where_possible(File.expand_path(scope || @full_path))
+    puts ">>> scope: #{scope} ==="
 
     scope_with_slash     = File.join(scope, '')
     full_path_with_slash = File.join(@full_path, '')

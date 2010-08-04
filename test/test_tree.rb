@@ -309,3 +309,42 @@ class TestTreeScopedRefresh < Test::Unit::TestCase
   end
 
 end
+
+class TestTreeSymlinkHandling < Test::Unit::TestCase
+
+  def setup
+    FileUtils.rm_rf TEST_DIR
+    FileUtils.rm_rf ALT_TEST_DIR
+    FileUtils.mkdir_p TEST_DIR
+
+    FileUtils.mkdir File.join(TEST_DIR, 'bar')
+    FileUtils.mkdir File.join(TEST_DIR, 'bar', 'boo')
+
+    FileUtils.touch File.join(TEST_DIR, 'aa')
+    FileUtils.touch File.join(TEST_DIR, 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'zz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'foo')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz.html')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
+
+    FileUtils.ln_s TEST_DIR, ALT_TEST_DIR
+
+    @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
+  end
+
+  should "handle referencing root scope via symlink" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'foo')
+    changed_paths = @tree.refresh! ALT_TEST_DIR
+    assert_equal "bar/foo", join(changed_paths)
+  end
+
+  should "handle referencing root scope by real path when monitoring a symlinked path" do
+    @tree = EMDirWatcher::Tree.new ALT_TEST_DIR
+    FileUtils.rm_rf File.join(ALT_TEST_DIR, 'bar', 'foo')
+    changed_paths = @tree.refresh! TEST_DIR
+    assert_equal "bar/foo", join(changed_paths)
+  end
+
+end

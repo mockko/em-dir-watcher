@@ -7,6 +7,7 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'em-dir-watcher'
 
 TEST_DIR = '/tmp/emdwtest' # Dir.mktmpdir
+ALT_TEST_DIR = '/tmp/emdwtestalt' # Dir.mktmpdir
 
 class Test::Unit::TestCase
 
