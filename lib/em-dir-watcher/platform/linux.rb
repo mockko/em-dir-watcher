@@ -5,6 +5,12 @@ module EMDirWatcher
 module Platform
 module Linux
 
+module Native
+  extend FFI::Library
+  ffi_lib "c"
+  attach_function :close, [:int], :int
+end
+
 class Watcher
 
   def initialize path, inclusions, exclusions
@@ -32,8 +38,7 @@ class Watcher
   def ready_to_use?; true; end
 
   def stop
-    @conn.stop
-    @notifier.watcher.close
+    Native.close @notifier.fd
   end
 end
 
