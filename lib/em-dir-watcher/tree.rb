@@ -4,9 +4,9 @@ require 'set'
 module EMDirWatcher
 
 class Entry
-  
+
   attr_reader :relative_path
-  
+
   def initialize tree, relative_path
     @tree = tree
     @relative_path = relative_path
@@ -19,6 +19,10 @@ class Entry
     if @relative_path.empty? then @tree.full_path else File.join(@tree.full_path, @relative_path) end
   end
 
+  def exists?
+    File.exists? full_path
+  end
+
   def compute_is_file
     FileTest.file? full_path
   end
@@ -28,17 +32,21 @@ class Entry
   rescue Errno::ENOENT, Errno::ENOTDIR
     Time.at(0)
   end
-  
+
   def compute_entry_names
     Dir.entries(full_path) - ['.', '..']
   rescue Errno::ENOENT, Errno::ENOTDIR
     []
   end
 
+  def relative_path_of entry_name
+    if @relative_path.empty? then entry_name else File.join(@relative_path, entry_name) end
+  end
+
   def compute_entries
     new_entries = {}
     compute_entry_names.each do |entry_name|
-      entry_relative_path = if @relative_path.empty? then entry_name else File.join(@relative_path, entry_name) end
+      entry_relative_path = relative_path_of entry_name
       next if @tree.excludes? entry_relative_path
       new_entries[entry_name] = @entries[entry_name] || Entry.new(@tree, entry_relative_path)
     end
@@ -55,6 +63,19 @@ class Entry
     end
     old_entries, @entries = @entries, compute_entries
     (Set.new(@entries.values) + Set.new(old_entries.values)).each { |entry| entry.refresh! changed_relative_paths }
+  end
+
+  def scoped_refresh! changed_relative_paths, relative_scope
+    if relative_scope.size == 0
+      refresh! changed_relative_paths
+    else
+      entry_name, children_relative_scope = relative_scope[0], relative_scope[1..-1]
+      entry_relative_path = relative_path_of entry_name
+      return if @tree.excludes? entry_relative_path
+      entry = (@entries[entry_name] ||= Entry.new(@tree, entry_relative_path))
+      entry.scoped_refresh! changed_relative_paths, children_relative_scope
+      @entries.delete entry_name unless entry.exists?
+    end
   end
 
   def recursive_file_entries
@@ -102,12 +123,12 @@ class Tree
   attr_reader :excludes
 
   def initialize full_path, exclusions=[]
-    @full_path = full_path
+    @full_path = File.expand_path(full_path)
     self.excludes = exclusions
     @root_entry = Entry.new self, ''
     @root_entry.refresh! []
   end
-  
+
   def excludes= new_excludes
     @excludes = new_excludes
     @exclude_matchers = new_excludes.collect do |exclusion|
@@ -120,10 +141,19 @@ class Tree
       end
     end
   end
-  
-  def refresh!
+
+  def refresh! scope=nil
+    scope = File.expand_path(scope || @full_path)
+
+    scope_with_slash     = File.join(scope, '')
+    full_path_with_slash = File.join(@full_path, '')
+    return [] unless scope_with_slash.downcase[0..full_path_with_slash.size-1] == full_path_with_slash.downcase
+
+    relative_scope = (scope[full_path_with_slash.size..-1] || '').split('/')
+    relative_scope = relative_scope.reject { |item| item == '' }
+
     changed_relative_paths = []
-    @root_entry.refresh! changed_relative_paths
+    @root_entry.scoped_refresh! changed_relative_paths, relative_scope
     changed_relative_paths.sort
   end
 
