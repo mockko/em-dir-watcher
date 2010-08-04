@@ -10,6 +10,7 @@ module EMDirWatcher
         end
 end
 
+require "em-dir-watcher/tree"
 require "em-dir-watcher/platform/#{EMDirWatcher::PLATFORM.downcase}"
 
 module EMDirWatcher
