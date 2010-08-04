@@ -6,5 +6,12 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'em-dir-watcher'
 
+TEST_DIR = '/tmp/emdwtest' # Dir.mktmpdir
+
 class Test::Unit::TestCase
+
+    def join list
+      list.join(", ").strip
+    end
+
 end

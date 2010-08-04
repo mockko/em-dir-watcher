@@ -2,8 +2,6 @@ require 'helper'
 require 'fileutils'
 require 'eventmachine'
 
-TEST_DIR = '/tmp/emdwtest' # Dir.mktmpdir
-
 class TestTreeFileList < Test::Unit::TestCase
 
   def setup
@@ -63,10 +61,6 @@ class TestTreeInclusions < Test::Unit::TestCase
     @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
   end
 
-  def join list
-    list.join(", ").strip
-  end
-
   should "ignore files not included by path" do
     @tree = EMDirWatcher::Tree.new TEST_DIR, ['/bar']
     assert_equal join(['bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort), join(@tree.full_file_list)
@@ -97,10 +91,6 @@ class TestTreeExclusions < Test::Unit::TestCase
     FileUtils.touch File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
 
     @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
-  end
-
-  def join list
-    list.join(", ").strip
   end
 
   should "ignore a single file excluded by path" do
@@ -150,10 +140,6 @@ class TestTreeInclusionsWithExclusions < Test::Unit::TestCase
     @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
   end
 
-  def join list
-    list.join(", ").strip
-  end
-
   should "ignore files that match both inclusions and exclusions" do
     @tree = EMDirWatcher::Tree.new TEST_DIR, ['/bar'], ['*.html']
     assert_equal join(['bar/foo', 'bar/biz', 'bar/boo/bizzz'].sort), join(@tree.full_file_list)
@@ -179,10 +165,6 @@ class TestTreeRefreshing < Test::Unit::TestCase
     FileUtils.touch File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
 
     @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
-  end
-
-  def join list
-    list.join(", ").strip
   end
 
   should "no changes when nothing has changed" do
@@ -283,10 +265,6 @@ class TestTreeScopedRefresh < Test::Unit::TestCase
     FileUtils.touch File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
 
     @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
-  end
-
-  def join list
-    list.join(", ").strip
   end
 
   should "fail with an exception when faced with an endless symlink loop" do
