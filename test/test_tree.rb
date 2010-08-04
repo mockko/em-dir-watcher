@@ -308,6 +308,17 @@ class TestTreeScopedRefresh < Test::Unit::TestCase
     assert_equal "bar/boo/bizzz", join(changed_paths)
   end
 
+  should "report removed files when doing cascaded scoped refreshes" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.rm_rf File.join(TEST_DIR, 'bar')
+
+    changed_paths = @tree.refresh! File.join(TEST_DIR, 'bar', 'boo')
+    assert_equal "bar/boo/bizzz", join(changed_paths)
+
+    changed_paths = @tree.refresh! File.join(TEST_DIR, 'bar')
+    assert_equal "bar/biz, bar/biz.html, bar/foo", join(changed_paths)
+  end
+
 end
 
 class TestTreeSymlinkHandling < Test::Unit::TestCase

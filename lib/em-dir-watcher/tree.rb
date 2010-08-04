@@ -55,7 +55,7 @@ class Entry
     new_entries
   end
 
-  def refresh! changed_relative_paths
+  def refresh_file! changed_relative_paths
     if @matches_inclusions
       used_to_be_file, @is_file = @is_file, compute_is_file
       previous_file_mtime, @file_mtime = @file_mtime, compute_file_mtime
@@ -65,20 +65,31 @@ class Entry
         changed_relative_paths << @relative_path
       end
     end
-    old_entries, @entries = @entries, compute_entries
-    (Set.new(@entries.values) + Set.new(old_entries.values)).each { |entry| entry.refresh! changed_relative_paths }
   end
 
-  def scoped_refresh! changed_relative_paths, relative_scope
+  def refresh! changed_relative_paths, refresh_subtree
+    refresh_file! changed_relative_paths
+    old_entries, @entries = @entries, compute_entries
+    entries_to_refresh = Set.new(@entries.values) + Set.new(old_entries.values)
+    if refresh_subtree
+        entries_to_refresh.each { |entry| entry.refresh! changed_relative_paths, true }
+    else
+        entries_to_refresh.each { |entry| entry.refresh_file! changed_relative_paths }
+    end
+  end
+
+  def scoped_refresh! changed_relative_paths, relative_scope, refresh_subtree
     if relative_scope.size == 0
-      refresh! changed_relative_paths
+      refresh! changed_relative_paths, refresh_subtree
     else
       entry_name, children_relative_scope = relative_scope[0], relative_scope[1..-1]
       entry_relative_path = relative_path_of entry_name
       return if @tree.excludes? entry_relative_path
-      entry = (@entries[entry_name] ||= Entry.new(@tree, entry_relative_path))
-      entry.scoped_refresh! changed_relative_paths, children_relative_scope
-      @entries.delete entry_name unless entry.exists?
+      entry = (@entries[entry_name] ||= Entry.new(@tree, entry_relative_path, @matches_inclusions))
+      entry.scoped_refresh! changed_relative_paths, children_relative_scope, refresh_subtree
+      if relative_scope.size == 1
+          @entries.delete entry_name unless entry.exists?
+      end
     end
   end
 
@@ -152,12 +163,11 @@ class Tree
     self.inclusions = inclusions
     self.exclusions = exclusions
     @root_entry = Entry.new self, '', false
-    @root_entry.refresh! []
+    @root_entry.refresh! [], true
   end
 
-  def refresh! scope=nil
+  def refresh! scope=nil, refresh_subtree=true
     scope = self.class.resolve_real_path_where_possible(File.expand_path(scope || @full_path))
-    puts ">>> scope: #{scope} ==="
 
     scope_with_slash     = File.join(scope, '')
     full_path_with_slash = File.join(@full_path, '')
@@ -167,7 +177,7 @@ class Tree
     relative_scope = relative_scope.reject { |item| item == '' }
 
     changed_relative_paths = []
-    @root_entry.scoped_refresh! changed_relative_paths, relative_scope
+    @root_entry.scoped_refresh! changed_relative_paths, relative_scope, refresh_subtree
     changed_relative_paths.sort
   end
 
