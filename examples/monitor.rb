@@ -4,11 +4,19 @@ require 'rubygems'
 require 'em-dir-watcher'
 
 dir = (ARGV.empty? ? '.' : ARGV.shift)
-globs = (ARGV.empty? ? ['**/*'] : ARGV)
+inclusions = ARGV.reject { |arg| arg =~ /^!/ }
+inclusions = nil if inclusions == []
+exclusions = ARGV.select { |arg| arg =~ /^!/ }.collect { |arg| arg[1..-1] }
+
+EM.error_handler{ |e|
+    puts "Error raised during event loop: #{e.class.name} #{e.message}"
+    puts e.backtrace
+}
 
 EM.run {
-    dw = EMDirWatcher.watch dir, globs do |path|
-        if File.exists? path
+    dw = EMDirWatcher.watch dir, inclusions, exclusions do |path|
+        full_path = File.join(dir, path)
+        if File.exists? full_path
             puts "Modified: #{path}"
         else
             puts "Deleted: #{path}"
