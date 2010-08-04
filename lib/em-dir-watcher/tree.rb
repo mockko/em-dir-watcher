@@ -7,8 +7,9 @@ class Entry
 
   attr_reader :relative_path
 
-  def initialize tree, relative_path
+  def initialize tree, relative_path, ancestor_matches_inclusions
     @tree = tree
+    @matches_inclusions = ancestor_matches_inclusions || @tree.includes?(relative_path)
     @relative_path = relative_path
     @is_file = false
     @file_mtime = Time.at(0)
@@ -48,18 +49,20 @@ class Entry
     compute_entry_names.each do |entry_name|
       entry_relative_path = relative_path_of entry_name
       next if @tree.excludes? entry_relative_path
-      new_entries[entry_name] = @entries[entry_name] || Entry.new(@tree, entry_relative_path)
+      new_entries[entry_name] = @entries[entry_name] || Entry.new(@tree, entry_relative_path, @matches_inclusions)
     end
     new_entries
   end
 
   def refresh! changed_relative_paths
-    used_to_be_file, @is_file = @is_file, compute_is_file
-    previous_file_mtime, @file_mtime = @file_mtime, compute_file_mtime
-    if used_to_be_file
-      changed_relative_paths << @relative_path if not @is_file or previous_file_mtime != @file_mtime
-    elsif @is_file
-      changed_relative_paths << @relative_path
+    if @matches_inclusions
+      used_to_be_file, @is_file = @is_file, compute_is_file
+      previous_file_mtime, @file_mtime = @file_mtime, compute_file_mtime
+      if used_to_be_file
+        changed_relative_paths << @relative_path if not @is_file or previous_file_mtime != @file_mtime
+      elsif @is_file
+        changed_relative_paths << @relative_path
+      end
     end
     old_entries, @entries = @entries, compute_entries
     (Set.new(@entries.values) + Set.new(old_entries.values)).each { |entry| entry.refresh! changed_relative_paths }
@@ -99,7 +102,7 @@ end
 
 class PathGlobMatcher
   def initialize glob
-    @glob = glob
+    @glob = glob.gsub(%r-^/+-, '')
   end
   def matches? relative_path
     File.fnmatch?(@glob, relative_path)
@@ -120,26 +123,27 @@ end
 class Tree
 
   attr_reader :full_path
-  attr_reader :excludes
-
-  def initialize full_path, exclusions=[]
-    @full_path = File.expand_path(full_path)
-    self.excludes = exclusions
-    @root_entry = Entry.new self, ''
-    @root_entry.refresh! []
-  end
-
-  def excludes= new_excludes
-    @excludes = new_excludes
-    @exclude_matchers = new_excludes.collect do |exclusion|
-      if Regexp === exclusion
-        RegexpMatcher.new exclusion
-      elsif exclusion.include? '/'
-        PathGlobMatcher.new exclusion
+  attr_reader :inclusions
+  attr_reader :exclusions
+  
+  def self.parse_matchers matcher_expressions
+    matcher_expressions.collect do |expr|
+      if Regexp === expr
+        RegexpMatcher.new expr
+      elsif expr.include? '/'
+        PathGlobMatcher.new expr
       else
-        NameGlobMatcher.new exclusion
+        NameGlobMatcher.new expr
       end
     end
+  end
+
+  def initialize full_path, inclusions=nil, exclusions=[]
+    @full_path = File.expand_path(full_path)
+    self.inclusions = inclusions
+    self.exclusions = exclusions
+    @root_entry = Entry.new self, '', false
+    @root_entry.refresh! []
   end
 
   def refresh! scope=nil
@@ -157,12 +161,28 @@ class Tree
     changed_relative_paths.sort
   end
 
+  def includes? relative_path
+    @inclusion_matchers.nil? || @inclusion_matchers.any? { |matcher| matcher.matches? relative_path }
+  end
+
   def excludes? relative_path
-    @exclude_matchers.any? { |matcher| matcher.matches? relative_path }
+    @exclusion_matchers.any? { |matcher| matcher.matches? relative_path }
   end
 
   def full_file_list
     @root_entry.recursive_file_entries.collect { |entry| entry.relative_path }.sort
+  end
+
+private
+
+  def inclusions= new_inclusions
+    @inclusions = new_inclusions
+    @inclusion_matchers = new_inclusions && self.class.parse_matchers(new_inclusions)
+  end
+
+  def exclusions= new_exclusions
+    @exclusions = new_exclusions
+    @exclusion_matchers = self.class.parse_matchers(new_exclusions)
   end
 
 end

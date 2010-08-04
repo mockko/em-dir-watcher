@@ -43,7 +43,43 @@ class TestTreeFileList < Test::Unit::TestCase
 
 end
 
-class TestTreeExcludes < Test::Unit::TestCase
+class TestTreeInclusions < Test::Unit::TestCase
+
+  def setup
+    FileUtils.rm_rf TEST_DIR
+    FileUtils.mkdir_p TEST_DIR
+
+    FileUtils.mkdir File.join(TEST_DIR, 'bar')
+    FileUtils.mkdir File.join(TEST_DIR, 'bar', 'boo')
+
+    FileUtils.touch File.join(TEST_DIR, 'aa')
+    FileUtils.touch File.join(TEST_DIR, 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'zz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'foo')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz.html')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
+
+    @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
+  end
+
+  def join list
+    list.join(", ").strip
+  end
+
+  should "ignore files not included by path" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR, ['/bar']
+    assert_equal join(['bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort), join(@tree.full_file_list)
+  end
+
+  should "ignore files not included by extension glob" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR, ['*.html']
+    assert_equal join(['bar/biz.html'].sort), join(@tree.full_file_list)
+  end
+
+end
+
+class TestTreeExclusions < Test::Unit::TestCase
 
   def setup
     FileUtils.rm_rf TEST_DIR
@@ -68,28 +104,59 @@ class TestTreeExcludes < Test::Unit::TestCase
   end
 
   should "ignore a single file excluded by path" do
-    @tree = EMDirWatcher::Tree.new TEST_DIR, ['bar/biz']
+    @tree = EMDirWatcher::Tree.new TEST_DIR, nil, ['bar/biz']
     assert_equal join(@list - ['bar/biz']), join(@tree.full_file_list)
   end
 
   should "ignore files excluded by name" do
-    @tree = EMDirWatcher::Tree.new TEST_DIR, ['biz']
+    @tree = EMDirWatcher::Tree.new TEST_DIR, nil, ['biz']
     assert_equal join(@list - ['biz', 'bar/biz']), join(@tree.full_file_list)
   end
 
   should "ignore files excluded by name glob" do
-    @tree = EMDirWatcher::Tree.new TEST_DIR, ['biz*']
+    @tree = EMDirWatcher::Tree.new TEST_DIR, nil, ['biz*']
     assert_equal join(@list - ['biz', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz']), join(@tree.full_file_list)
   end
 
   should "ignore a directory excluded by name glob" do
-    @tree = EMDirWatcher::Tree.new TEST_DIR, ['bo*']
+    @tree = EMDirWatcher::Tree.new TEST_DIR, nil, ['bo*']
     assert_equal join(@list - ['bar/boo/bizzz']), join(@tree.full_file_list)
   end
 
   should "ignore a files and directories excluded by regexp" do
-    @tree = EMDirWatcher::Tree.new TEST_DIR, [/b/]
+    @tree = EMDirWatcher::Tree.new TEST_DIR, nil, [/b/]
     assert_equal join(['aa', 'zz']), join(@tree.full_file_list)
+  end
+
+end
+
+class TestTreeInclusionsWithExclusions < Test::Unit::TestCase
+
+  def setup
+    FileUtils.rm_rf TEST_DIR
+    FileUtils.mkdir_p TEST_DIR
+
+    FileUtils.mkdir File.join(TEST_DIR, 'bar')
+    FileUtils.mkdir File.join(TEST_DIR, 'bar', 'boo')
+
+    FileUtils.touch File.join(TEST_DIR, 'aa')
+    FileUtils.touch File.join(TEST_DIR, 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'zz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'foo')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz.html')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
+
+    @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
+  end
+
+  def join list
+    list.join(", ").strip
+  end
+
+  should "ignore files that match both inclusions and exclusions" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR, ['/bar'], ['*.html']
+    assert_equal join(['bar/foo', 'bar/biz', 'bar/boo/bizzz'].sort), join(@tree.full_file_list)
   end
 
 end
@@ -189,7 +256,7 @@ class TestTreeRefreshing < Test::Unit::TestCase
   end
 
   should "avoid traversing excluded directories" do
-    @tree = EMDirWatcher::Tree.new TEST_DIR, ['death']
+    @tree = EMDirWatcher::Tree.new TEST_DIR, nil, ['death']
     FileUtils.ln_s(TEST_DIR, File.join(TEST_DIR, 'death'))
     FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'foo')
     changed_paths = @tree.refresh!
