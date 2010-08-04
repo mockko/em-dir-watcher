@@ -7,6 +7,7 @@ module EMDirWatcher
         case Config::CONFIG['target_os']
             when /mswin|mingw/ then 'Windows'
             when /darwin/      then 'Mac'
+            when /linux/       then 'Linux'
             else                    'NIX'
         end
 end
