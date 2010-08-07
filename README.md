@@ -101,7 +101,6 @@ If you find yourself using this gem, consider implementing one of the following 
 License
 -------
 
-Copyright (c) 2010 Andrey Tarantsov.
-Copyright (c) 2010 Mikhail Gusarov.
+Copyright © 2010 Andrey Tarantsov, Mikhail Gusarov.
 
 Distributed under the MIT license. See LICENSE for details.
