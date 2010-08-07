@@ -1,7 +1,7 @@
 em-dir-watcher: sane cross-platform file system change monitoring for Event Machine
 ===================================================================================
 
-Compatible with Ruby 1.8.
+Compatible with Ruby 1.8+
 
 Supported platforms:
 
