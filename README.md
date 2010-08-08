@@ -26,6 +26,22 @@ DirectoryWatcher's Event Machine edition uses `EM.watchFile`, which runs out of 
 Besides, both fssm and directory_watcher do not support exclusions, and thus will walk, update and keep the entire tree in memory including the subfolders you don't need. Em-dir-watcher never walks excluded subfolders, so you can exclude the stuff you don't need to watch to further improve the performance.
 
 
+Installation
+------------
+
+Mac:
+
+    sudo gem install em-dir-watcher
+
+Linux:
+
+    sudo gem install rb-inotify em-dir-watcher
+
+Windows:
+
+    gem install win32-changenotify em-dir-watcher
+
+
 Usage
 -----
 
