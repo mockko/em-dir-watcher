@@ -34,7 +34,11 @@ class Watcher
       conn.notify_readable = true
     end
   end
-    
+
+  def when_ready_to_use
+      yield
+  end
+
   def ready_to_use?; true; end
 
   def stop

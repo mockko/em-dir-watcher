@@ -28,12 +28,29 @@ class Watcher
         @handler = handler
         @active = true
         @ready_to_use = false
+        @ready_to_use_handlers = []
 
         start_server
         setup_listener
     end
 
-    def ready_to_use!; @ready_to_use = true; end
+    def when_ready_to_use &ready_to_use_handler
+      if @ready_to_use_handlers.nil?
+          ready_to_use_handler.call()
+      else
+          @ready_to_use_handlers << ready_to_use_handler
+      end
+    end
+
+    def ready_to_use!
+        return if @ready_to_use
+        @ready_to_use = true
+        # give the child process additional 100ms to start watching loop
+        EM.add_timer 0.1 do
+            @ready_to_use_handlers.each { |handler| handler.call() }
+            @ready_to_use_handlers = nil
+        end
+    end
     
     def ready_to_use?; @ready_to_use; end
 

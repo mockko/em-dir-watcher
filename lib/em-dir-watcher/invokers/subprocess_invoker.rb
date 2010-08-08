@@ -8,17 +8,40 @@ class SubprocessInvoker
 
     attr_reader :active
     attr_reader :input_handler
+    attr_accessor :additional_delay
 
     def initialize subprocess, &input_handler
         @subprocess = subprocess
         @input_handler = input_handler
         @active = true
+        @ready_to_use = false
+        @ready_to_use_handlers = []
+        @additional_delay = 0.1
         start_subprocess
+    end
+
+    def when_ready_to_use &ready_to_use_handler
+      if @ready_to_use_handlers.nil?
+          ready_to_use_handler.call()
+      else
+          @ready_to_use_handlers << ready_to_use_handler
+      end
     end
 
     def stop
         @active = false
         kill
+    end
+
+    # private methods
+
+    def ready_to_use!
+        return if @ready_to_use
+        @ready_to_use = true
+        EM.add_timer @additional_delay do
+            @ready_to_use_handlers.each { |handler| handler.call() }
+            @ready_to_use_handlers = nil
+        end
     end
 
     def kill
@@ -33,14 +56,12 @@ class SubprocessInvoker
         io = open('|-', 'r')
         if io.nil?
             $stdout.sync = true
-            puts
-            @subprocess.call do |single_line_string|
-                puts single_line_string.strip
-            end
+            ready  = lambda { puts }
+            output = lambda { |single_line_string| puts single_line_string.strip }
+            @subprocess.call ready, output
             exit
         end
         @io = io
-        @io.readline
         @io.nonblock = true
 
         @connection = EM.watch io do |conn|
@@ -48,6 +69,7 @@ class SubprocessInvoker
                 attr_accessor :invoker
                 
                 def notify_readable
+                    @invoker.ready_to_use!
                     @data_received ||= ""
                     @data_received << @io.read
                     while line = @data_received.slice!(/^[^\n]*[\n]/m)
