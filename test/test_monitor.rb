@@ -31,11 +31,10 @@ class TestMonitor < Test::Unit::TestCase
         EM.run {
             watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'] do |changed_paths|
                 all_changed_paths += changed_paths
-                EM.add_timer 0.2 do EM.stop end
             end
             watcher.when_ready_to_use do
                 FileUtils.rm_rf File.join(TEST_DIR, 'bar')
-                EM.add_timer 1 do EM.stop end
+                EM.add_timer UNIT_DELAY do EM.stop end
             end
         }
         watcher.stop
