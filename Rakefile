@@ -9,7 +9,7 @@ begin
     gem.description = gem.summary
     gem.email = "andreyvit@gmail.com"
     gem.homepage = "http://github.com/mockko/em-dir-watcher"
-    gem.authors = ["Andrey Tarantsov"]
+    gem.authors = ["Andrey Tarantsov", "Mikhail Gusarov"]
 #     gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
