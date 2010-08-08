@@ -46,7 +46,7 @@ class SubprocessInvoker
 
     def kill
         if @io
-            Process.kill 'TERM', @io.pid 
+            Process.kill 9, @io.pid
             Process.waitpid @io.pid
             @io = nil
         end
