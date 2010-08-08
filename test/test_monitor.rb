@@ -2,6 +2,8 @@ require 'helper'
 
 class TestMonitor < Test::Unit::TestCase
 
+    UNIT_DELAY = 0.2
+
     def setup
         FileUtils.rm_rf TEST_DIR
         FileUtils.mkdir_p TEST_DIR
@@ -21,12 +23,12 @@ class TestMonitor < Test::Unit::TestCase
     end
 
     should "should report a deletion" do
-        changed_paths = []
+        all_changed_paths = []
         stopped = false
         watcher = nil
         EM.run {
-            watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'] do |changed_path|
-                changed_paths << changed_path
+            watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'] do |changed_paths|
+                all_changed_paths += changed_paths
                 EM.add_timer 0.2 do EM.stop end
             end
             watcher.when_ready_to_use do
@@ -35,7 +37,7 @@ class TestMonitor < Test::Unit::TestCase
             end
         }
         watcher.stop
-        assert_equal join(['bar/foo', 'bar/biz', 'bar/boo/bizzz'].sort), join(changed_paths.sort)
+        assert_equal join(['bar/foo', 'bar/biz', 'bar/boo/bizzz'].sort), join(all_changed_paths.sort)
     end
 
     should "choke on invalid option keys" do
@@ -44,6 +46,79 @@ class TestMonitor < Test::Unit::TestCase
                 EMDirWatcher.watch TEST_DIR, :bogus_option => true
             }
         end
+    end
+
+    should "report each change individually when using a zero grace period" do
+        changed_1 = []
+        changed_2 = []
+        changed_cur = changed_1
+        stopped = false
+        watcher = nil
+        EM.run {
+            watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'] do |changed_paths|
+                changed_cur.push *changed_paths
+            end
+            watcher.when_ready_to_use do
+                FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'foo')
+                EM.add_timer 1 do
+                    changed_cur = changed_2
+                    FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'biz')
+                    EM.add_timer 0.5 do EM.stop end
+                end
+            end
+        }
+        watcher.stop
+        assert_equal 'bar/foo >> bar/biz', join(changed_1.sort) + " >> " + join(changed_cur.sort)
+    end
+
+    should "combine changes when using a non-zero grace period" do
+        changed_1 = []
+        changed_2 = []
+        changed_cur = changed_1
+        stopped = false
+        watcher = nil
+        EM.run {
+            watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'], :grace_period => 2*UNIT_DELAY do |changed_paths|
+                changed_cur.push *changed_paths
+            end
+            watcher.when_ready_to_use do
+                FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'foo')
+                EM.add_timer UNIT_DELAY do
+                    changed_cur = changed_2
+                    FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'biz')
+                    EM.add_timer 2*UNIT_DELAY do EM.stop end
+                end
+            end
+        }
+        watcher.stop
+        assert_equal ' >> bar/biz, bar/foo', join(changed_1.sort) + " >> " + join(changed_cur.sort)
+    end
+
+    should "not report duplicate changes when using a non-zero grace period" do
+        changed_1 = []
+        changed_2 = []
+        changed_cur = changed_1
+        stopped = false
+        watcher = nil
+        EM.run {
+            watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'], :grace_period => 3*UNIT_DELAY do |changed_paths|
+                changed_cur.push *changed_paths
+            end
+            watcher.when_ready_to_use do
+                FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'foo')
+                EM.add_timer UNIT_DELAY do
+                    FileUtils.touch File.join(TEST_DIR, 'bar', 'foo')
+                    EM.add_timer UNIT_DELAY do
+                        changed_cur = changed_2
+                        FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'foo')
+                        FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'biz')
+                        EM.add_timer 2*UNIT_DELAY do EM.stop end
+                    end
+                end
+            end
+        }
+        watcher.stop
+        assert_equal ' >> bar/biz, bar/foo', join(changed_1.sort) + " >> " + join(changed_cur.sort)
     end
 
 end

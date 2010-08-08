@@ -33,11 +33,13 @@ Usage
     require 'em-dir-watcher'
 
     EM.run {
-        dw = EMDirWatcher.watch '.' do |path|
-            if File.exists? path
-                puts "Modified: #{path}"
-            else
-                puts "Deleted: #{path}"
+        dw = EMDirWatcher.watch '.' do |paths|
+            paths.each do |path|
+                if File.exists? path
+                    puts "Modified: #{path}"
+                else
+                    puts "Deleted: #{path}"
+                end
             end
         end
         puts "EventMachine running..."
@@ -49,9 +51,12 @@ Run `examples/monitor.rb` to see it in action.
 EMDirWatcher.watch
 ------------------
 
-`EMDirWatcher.watch` accepts 3 arguments:
+`EMDirWatcher.watch` accepts a path and an options hash:
 
-    EMDirWatcher.watch File.expand_path('~/my_project'), ['*.html', '*.css', '*.js'], ['~*', 'vendor/plugins']
+    EMDirWatcher.watch File.expand_path('~/my_project'),
+        :include_only => ['*.html', '*.css', '*.js'],
+        :exclude => ['~*', 'vendor/plugins'],
+        :grace_period => 0.2
 
 It returns an object that has a single `stop` method:
 
@@ -76,6 +81,14 @@ Patterns are inspired by Git's `.gitignore` conventions. Each pattern can be one
 * A regexp is matched against file relative paths. For example, you can use `/[A-Z]/` to match all files and directories that contain upper-case characters in their name.
 
 
+Grace period
+------------
+
+Use `:grace_period => 1.0` to combine the changes together if they occur in quick succession. This, for example, may be used to avoid starting a build while some files are still being updated from a repository.
+
+The default grace period is `0`, which means that changes are reported immediately when they occur.
+
+
 Hacking
 -------
 
@@ -91,11 +104,11 @@ Help Wanted aka TODO
 
 If you find yourself using this gem, consider implementing one of the following functions:
 
-* grace period that delays notifications while the changes keep flowing, to avoid notifying about continuous changes in a single file multiple times
 * Ruby 1.9-friendly thread-based Mac backend
 * Ruby 1.9-friendly thread-based Windows backend
 * FFI-based Mac backend — there is no need to employ Ruby Cocoa monster just to invoke a handful of functions; a nearly-working version is in `lib/em-dir-watcher/platform/mac/ffi_fsevents_watcher.rb`, just needs some final touches
 * polling-based fallback backend for the folks on funny operating systems (from FreeBSD to Solaris to HP UX :)
+* use Mac OS X's FSEvents native grace period implementation
 
 
 License
