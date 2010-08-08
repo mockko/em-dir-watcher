@@ -9,18 +9,21 @@ inclusions = nil if inclusions == []
 exclusions = ARGV.select { |arg| arg =~ /^!/ }.collect { |arg| arg[1..-1] }
 
 EM.error_handler{ |e|
-    puts "Error raised during event loop: #{e.class.name} #{e.message}"
-    puts e.backtrace
+  puts "Error raised during event loop: #{e.class.name} #{e.message}"
+  puts e.backtrace
 }
 
 EM.run {
-    dw = EMDirWatcher.watch dir, :include_only => inclusions, :exclude => exclusions do |path|
-        full_path = File.join(dir, path)
-        if File.exists? full_path
-            puts "Modified: #{path}"
-        else
-            puts "Deleted: #{path}"
-        end
+  dw = EMDirWatcher.watch dir, :include_only => inclusions, :exclude => exclusions do |paths|
+    paths.each do |path|
+      puts path
+      full_path = File.join(dir, path)
+      if File.exists? full_path
+        puts "Modified: #{path}"
+      else
+        puts "Deleted: #{path}"
+      end
     end
-    puts "Monitoring #{File.expand_path(dir)}..."
+  end
+  puts "Monitoring #{File.expand_path(dir)}..."
 }
