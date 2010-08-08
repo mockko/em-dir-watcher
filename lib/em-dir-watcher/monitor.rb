@@ -19,8 +19,10 @@ module EMDirWatcher
         grace_period = options[:grace_period]
 
         tree = Tree.new path, options[:include_only], options[:exclude]
+
         pending_refresh_requests = Set.new
         process_pending_refresh_requests_scheduled = false
+
         process_pending_refresh_requests = lambda do
             process_pending_refresh_requests_scheduled = false
             changed_paths = Set.new
@@ -29,7 +31,8 @@ module EMDirWatcher
             end
             yield changed_paths.to_a unless changed_paths.empty?
         end
-        watcher = Watcher.new path, options[:include_only], options[:exclude] do |change_scope, refresh_subtree|
+
+        Watcher.new path, options[:include_only], options[:exclude] do |change_scope, refresh_subtree|
             pending_refresh_requests << [change_scope, refresh_subtree]
             if grace_period <= INFINITELY_SMALL_PERIOD
                 process_pending_refresh_requests.call
@@ -40,6 +43,5 @@ module EMDirWatcher
                 end
             end
         end
-        watcher
     end
 end
