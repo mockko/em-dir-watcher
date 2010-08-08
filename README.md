@@ -92,6 +92,10 @@ The default grace period is `0`, which means that changes are reported immediate
 Hacking
 -------
 
+Required software:
+
+    sudo gem install jeweler shoulda
+
 To run the tests, use:
 
     rake test
@@ -101,6 +105,8 @@ This is expected to work on all platforms and shouldn't give any failures, EXCEP
 You can use `./testloop` script to run the tests multiple times in a row to check for unreliable behaviors.
 
 To give a more context on Mac test failures, two constants that have an effect on them are `STARTUP_DELAY` in `lib/em-dir-watcher/platform/mac.rb` and `UNIT_DELAY` in `tests/test_monitor.rb`. We've settled on a sweet spot of `0.5`/`0.5`, which gives a 5%–15% failure rate. Increasing them to `1.0`/`1.0` still results in the same failure rate. Decreasing them to `0.2`/`0.2` results in 30% failed test runs.
+
+You can use `rake rcov` to check code coverage info. Currently `tree.rb` and `monitor.rb` have 100% test coverage, `mac.rb` has 80% coverage, `linux.rb` should have about 100% coverage and `windows.rb` should have about 80% coverage (the last two were not measured).
 
 
 Help Wanted aka TODO
