@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{em-dir-watcher}
-  s.version = "0.9.1"
+  s.version = "0.9.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey Tarantsov", "Mikhail Gusarov"]
@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
      "README.md",
      "Rakefile",
      "VERSION",
+     "em-dir-watcher.gemspec",
      "examples/monitor.rb",
      "lib/em-dir-watcher.rb",
      "lib/em-dir-watcher/invokers/subprocess_invoker.rb",
