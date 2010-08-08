@@ -323,6 +323,81 @@ class TestTreeScopedRefresh < Test::Unit::TestCase
 
 end
 
+class TestTreeScopedNonRecursiveRefresh < Test::Unit::TestCase
+
+  def setup
+    FileUtils.rm_rf TEST_DIR
+    FileUtils.mkdir_p TEST_DIR
+    FileUtils.rm_rf ALT_TEST_DIR
+    FileUtils.mkdir_p ALT_TEST_DIR
+
+    FileUtils.mkdir File.join(TEST_DIR, 'bar')
+    FileUtils.mkdir File.join(TEST_DIR, 'bar', 'boo')
+
+    FileUtils.touch File.join(TEST_DIR, 'aa')
+    FileUtils.touch File.join(TEST_DIR, 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'zz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'foo')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'biz.html')
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
+
+    @list = ['aa', 'biz', 'zz', 'bar/foo', 'bar/biz', 'bar/biz.html', 'bar/boo/bizzz'].sort
+  end
+
+  should "not report changes in a child directory" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'boo', 'bizzz')
+    changed_paths = @tree.refresh! File.join(TEST_DIR, 'bar'), false
+    assert_equal "", join(changed_paths)
+  end
+
+  should "report removed files" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.rm_rf File.join(TEST_DIR, 'bar', 'foo')
+    changed_paths = @tree.refresh! File.join(TEST_DIR, 'bar'), false
+    assert_equal "bar/foo", join(changed_paths)
+  end
+
+  should "report added files" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.touch File.join(TEST_DIR, 'bar', 'coo')
+    changed_paths = @tree.refresh! File.join(TEST_DIR, 'bar'), false
+    assert_equal "bar/coo", join(changed_paths)
+  end
+
+  should "report entire subtree of a removed directory when the scope specifies that directory" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.rm_rf File.join(TEST_DIR, 'bar')
+    changed_paths = @tree.refresh! File.join(TEST_DIR, 'bar'), false
+    assert_equal "bar/biz, bar/biz.html, bar/boo/bizzz, bar/foo", join(changed_paths)
+  end
+
+  should "report entire subtree of an added directory when the scope specifies that directory" do
+    FileUtils.mv File.join(TEST_DIR, 'bar'), ALT_TEST_DIR
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.mv File.join(ALT_TEST_DIR, 'bar'), TEST_DIR
+    changed_paths = @tree.refresh! File.join(TEST_DIR, 'bar'), false
+    assert_equal "bar/biz, bar/biz.html, bar/boo/bizzz, bar/foo", join(changed_paths)
+  end
+
+  should "report entire subtree of a removed directory when the scope specifies a parent directory" do
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.rm_rf File.join(TEST_DIR, 'bar')
+    changed_paths = @tree.refresh! File.join(TEST_DIR), false
+    assert_equal "bar/biz, bar/biz.html, bar/boo/bizzz, bar/foo", join(changed_paths)
+  end
+
+  should "report entire subtree of an added directory when the scope specifies a parent directory" do
+    FileUtils.mv File.join(TEST_DIR, 'bar'), ALT_TEST_DIR
+    @tree = EMDirWatcher::Tree.new TEST_DIR
+    FileUtils.mv File.join(ALT_TEST_DIR, 'bar'), TEST_DIR
+    changed_paths = @tree.refresh! File.join(TEST_DIR), false
+    assert_equal "bar/biz, bar/biz.html, bar/boo/bizzz, bar/foo", join(changed_paths)
+  end
+
+end
+
 unless EMDirWatcher::PLATFORM == 'Windows'
   class TestTreeSymlinkHandling < Test::Unit::TestCase
 

@@ -70,11 +70,18 @@ class Entry
   def refresh! changed_relative_paths, refresh_subtree
     refresh_file! changed_relative_paths
     old_entries, @entries = @entries, compute_entries
-    entries_to_refresh = Set.new(@entries.values) + Set.new(old_entries.values)
+
     if refresh_subtree
+        entries_to_refresh = Set.new(@entries.values) + Set.new(old_entries.values)
         entries_to_refresh.each { |entry| entry.refresh! changed_relative_paths, true }
     else
-        entries_to_refresh.each { |entry| entry.refresh_file! changed_relative_paths }
+        new_set, old_set = Set.new(@entries.values), Set.new(old_entries.values)
+        removed_entries, added_entries = old_set - new_set, new_set - old_set
+        still_existing_entries = old_set - removed_entries
+        added_or_removed_entries = added_entries + removed_entries
+
+        added_or_removed_entries.each { |entry| entry.refresh!      changed_relative_paths, true }
+        still_existing_entries.each   { |entry| entry.refresh_file! changed_relative_paths }
     end
   end
 

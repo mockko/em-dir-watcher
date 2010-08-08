@@ -7,6 +7,8 @@ class TestMonitor < Test::Unit::TestCase
     def setup
         FileUtils.rm_rf TEST_DIR
         FileUtils.mkdir_p TEST_DIR
+        FileUtils.rm_rf ALT_TEST_DIR
+        FileUtils.mkdir_p ALT_TEST_DIR
 
         FileUtils.mkdir File.join(TEST_DIR, 'bar')
         FileUtils.mkdir File.join(TEST_DIR, 'bar', 'boo')
@@ -119,6 +121,40 @@ class TestMonitor < Test::Unit::TestCase
         }
         watcher.stop
         assert_equal ' >> bar/biz, bar/foo', join(changed_1.sort) + " >> " + join(changed_cur.sort)
+    end
+
+    should "should report entire subtree as changed when a directory is moved away" do
+        all_changed_paths = []
+        stopped = false
+        watcher = nil
+        EM.run {
+            watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'] do |changed_paths|
+                all_changed_paths += changed_paths
+            end
+            watcher.when_ready_to_use do
+                FileUtils.mv File.join(TEST_DIR, 'bar'), ALT_TEST_DIR
+                EM.add_timer UNIT_DELAY do EM.stop end
+            end
+        }
+        watcher.stop
+        assert_equal join(['bar/foo', 'bar/biz', 'bar/boo/bizzz'].sort), join(all_changed_paths.sort)
+    end
+
+    should "should report entire subtree as changed when a directory is moved in" do
+        all_changed_paths = []
+        stopped = false
+        watcher = nil
+        EM.run {
+            watcher = EMDirWatcher.watch ALT_TEST_DIR, :exclude => ['*.html'] do |changed_paths|
+                all_changed_paths += changed_paths
+            end
+            watcher.when_ready_to_use do
+                FileUtils.mv File.join(TEST_DIR, 'bar'), ALT_TEST_DIR
+                EM.add_timer UNIT_DELAY do EM.stop end
+            end
+        }
+        watcher.stop
+        assert_equal join(['bar/foo', 'bar/biz', 'bar/boo/bizzz'].sort), join(all_changed_paths.sort)
     end
 
 end
