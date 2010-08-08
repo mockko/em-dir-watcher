@@ -14,7 +14,7 @@ EM.error_handler{ |e|
 }
 
 EM.run {
-    dw = EMDirWatcher.watch dir, inclusions, exclusions do |path|
+    dw = EMDirWatcher.watch dir, :include_only => inclusions, :exclude => exclusions do |path|
         full_path = File.join(dir, path)
         if File.exists? full_path
             puts "Modified: #{path}"
