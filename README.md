@@ -96,7 +96,11 @@ To run the tests, use:
 
     rake test
 
-This is expected to work on all 3 platforms, and shouldn't give any failures. (Although Mac version sometimes gives spurious failures on the monitoring test because the startup delay is not reliable.)
+This is expected to work on all platforms and shouldn't give any failures, EXCEPT that on a Mac spurious test failures occur in about 1–3 of 20 test runs, and we are unable to get rid of them.
+
+You can use `./testloop` script to run the tests multiple times in a row to check for unreliable behaviors.
+
+To give a more context on Mac test failures, two constants that have an effect on them are `STARTUP_DELAY` in `lib/em-dir-watcher/platform/mac.rb` and `UNIT_DELAY` in `tests/test_monitor.rb`. We've settled on a sweet spot of `0.5`/`0.5`, which gives a 5%–15% failure rate. Increasing them to `1.0`/`1.0` still results in the same failure rate. Decreasing them to `0.2`/`0.2` results in 30% failed test runs.
 
 
 Help Wanted aka TODO

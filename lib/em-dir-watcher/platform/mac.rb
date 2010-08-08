@@ -7,6 +7,8 @@ module Mac
 
 class Watcher
 
+    STARTUP_DELAY = 0.5
+
     attr_accessor :handler, :active
 
     def initialize path, inclusions, exclusions
@@ -27,7 +29,9 @@ class Watcher
                 yield path, refresh_subtree
             end
         end
-        @invoker.additional_delay = 0.1
+        # Mac OS X seems to require this delay till it really starts listening for file system changes.
+        # See README for explaination of the effect.
+        @invoker.additional_delay = STARTUP_DELAY
     end
 
     def when_ready_to_use &ready_to_use_handler

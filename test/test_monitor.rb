@@ -2,7 +2,9 @@ require 'helper'
 
 class TestMonitor < Test::Unit::TestCase
 
-    UNIT_DELAY = 0.2
+    # A sufficiently reliable maximum file system change reporting lag, in seconds.
+    # See README for explaination of its effect.
+    UNIT_DELAY = 0.5
 
     def setup
         FileUtils.rm_rf TEST_DIR
