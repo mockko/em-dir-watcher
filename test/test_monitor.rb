@@ -25,7 +25,7 @@ class TestMonitor < Test::Unit::TestCase
         stopped = false
         watcher = nil
         EM.run {
-            watcher = EMDirWatcher.watch TEST_DIR, ['/bar'], ['*.html'] do |changed_path|
+            watcher = EMDirWatcher.watch TEST_DIR, :include_only => ['/bar'], :exclude => ['*.html'] do |changed_path|
                 changed_paths << changed_path
                 EM.add_timer 0.2 do EM.stop end
             end
@@ -36,6 +36,14 @@ class TestMonitor < Test::Unit::TestCase
         }
         watcher.stop
         assert_equal join(['bar/foo', 'bar/biz', 'bar/boo/bizzz'].sort), join(changed_paths.sort)
+    end
+
+    should "choke on invalid option keys" do
+        assert_raise StandardError do
+            EM.run {
+                EMDirWatcher.watch TEST_DIR, :bogus_option => true
+            }
+        end
     end
 
 end
