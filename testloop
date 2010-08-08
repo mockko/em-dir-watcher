@@ -1,0 +1,11 @@
+#! /bin/bash
+N=20
+test -n "$1" && N=$1
+: >/tmp/failures
+for (( i = 1; i <= N; i++ )); do
+  echo "*** ATTEMP $i ***"
+  rake test || echo "failed $i" >>/tmp/failures
+done
+cat /tmp/failures
+F=$(cat /tmp/failures | wc -l)
+echo "Failed $F of $N test runs ($(( F*100/N ))%)"
