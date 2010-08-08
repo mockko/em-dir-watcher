@@ -85,7 +85,7 @@ class Watcher
     def setup_listener
         path_to_script = File.join(File.dirname(__FILE__), 'windows', 'monitor.rb')
         path_to_ruby_exe = 'ruby'
-        @io = IO.popen(path_to_ruby_exe + " " + path_to_script + " #{@server_port} " + File.expand_path(@path))
+        @io = IO.popen('"' + path_to_ruby_exe + '" "' + path_to_script + "\" #{@server_port} \"" + File.expand_path(@path) + '"')
     end
 
     def path_changed path
