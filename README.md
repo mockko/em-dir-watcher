@@ -39,7 +39,7 @@ Linux:
 
 Windows:
 
-    gem install win32-changenotify em-dir-watcher
+    gem install win32-changenotify win32-event em-dir-watcher
 
 
 Usage
