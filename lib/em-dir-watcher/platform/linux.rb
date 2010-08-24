@@ -1,5 +1,4 @@
 require 'rb-inotify'
-require 'io/nonblock'
 
 module EMDirWatcher
 module Platform
