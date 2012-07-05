@@ -35,6 +35,7 @@ class Watcher
   def ready_to_use?; true; end
 
   def stop
+    @conn.detach
     @notifier.close
   rescue SystemCallError
   end
