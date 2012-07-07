@@ -45,6 +45,7 @@ class SubprocessInvoker
     end
 
     def kill
+        @connection.detach
         if @io
             Process.kill 9, @io.pid
             Process.waitpid @io.pid
