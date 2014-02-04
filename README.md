@@ -35,11 +35,11 @@ Mac:
 
 Linux:
 
-    sudo gem install rb-inotify em-dir-watcher
+    sudo gem install em-dir-watcher
 
 Windows:
 
-    gem install win32-changenotify win32-event em-dir-watcher
+    gem install em-dir-watcher
 
 
 Usage
