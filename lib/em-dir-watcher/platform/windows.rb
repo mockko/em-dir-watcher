@@ -32,6 +32,8 @@ class Watcher
 
         start_server
         setup_listener
+
+        ::Kernel.at_exit { self.stop }    # ensure kill child process
     end
 
     def when_ready_to_use &ready_to_use_handler
